@@ -2,17 +2,17 @@ from datetime import datetime
 from app.crud import get_booking
 
 def convert_to_date(date_str):
-    """Convert a string like '2025-11-07' to a datetime.date"""
-    if isinstance(date_str, datetime):  # already a datetime
+    
+    if isinstance(date_str, datetime): 
         return date_str.date()
-    elif hasattr(date_str, "year"):  # already a date object
+    elif hasattr(date_str, "year"):  
         return date_str
     return datetime.strptime(date_str, "%Y-%m-%d").date()
 
 
 def convert_to_time(time_str):
-    """Convert time string to datetime.time, supports both 'HH:MM' and 'HH:MM:SS'"""
-    if hasattr(time_str, "hour"):  # already a time object
+    
+    if hasattr(time_str, "hour"): 
         return time_str
     try:
         # First try 'HH:MM:SS'
@@ -28,7 +28,7 @@ def validate_booking(bookreq):
     print(bookreq["workspace_id"])
     booking_list = get_booking(bookreq["workspace_id"])
 
-    # Combine new booking's start and end
+   
     new_start = datetime.combine(
         convert_to_date(bookreq["startdate"]),
         convert_to_time(bookreq["starttime"])
@@ -46,9 +46,9 @@ def validate_booking(bookreq):
 
         print("Existing:", existing_start, existing_end)
 
-        # Check for overlap
+ 
         if not (new_end <= existing_start or new_start >= existing_end):
             print("Log overlap")
-            return False  # overlap found
+            return False 
 
     return True

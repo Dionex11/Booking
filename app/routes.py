@@ -8,11 +8,11 @@ bp = Blueprint('routes', __name__)
 @bp.route("/")
 def home():
     try:
-        # Fetch ORM objects
+     
         ws = fetch_workspaces()
      
 
-        # Convert ORM objects to dicts before passing to template
+       
         workspace_data = [
             {"id": w.id, "name": w.name, "status": w.status}
             for w in ws
@@ -33,7 +33,7 @@ def book_workspace():
 
     try:
         if validate_booking(data):
-            # Convert and format data before saving
+            
             print("!saved")
             booking = Booking(
                 workspace_id=data["workspace_id"],
