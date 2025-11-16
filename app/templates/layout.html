@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workspace Booking System</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        /* Define a custom font */
+        body { font-family: "Inter", sans-serif; }
+
+        /* Base styles for the workspace box */
+        .workspace-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100px;
+            font-weight: 700;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            padding: 8px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Available state */
+        .workspace-box.available {
+            background-color: #dcfce7; /* green-100 */
+            color: #166534; /* green-800 */
+            border: 3px solid #4ade80; /* green-400 */
+        }
+        .workspace-box.available:hover {
+            background-color: #bbffcf;
+            transform: scale(1.03);
+        }
+
+        /* Booked state */
+        .workspace-box.booked {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+            border: 3px solid #f87171; /* red-400 */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .workspace-box.booked:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Modal backdrop/container */
+        .modal {
+            background-color: rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 bg-gray-100">
+
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-4xl font-extrabold text-gray-800 mb-8 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 mr-3 text-indigo-600">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5m-16.5 0A2.25 2.25 0 0 0 6 18.75h12A2.25 2.25 0 0 0 20.25 18V5.25A2.25 2.25 0 0 0 18 3H6a2.25 2.25 0 0 0-2.25 2.25v13.5ZM10.5 6a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm-.75 6a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.75-2.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z" />
+            </svg>
+            Workspace Booking System
+        </h1>
+
+        <!-- 🔍 Filter and Time Selection Form -->
+        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 space-y-4">
+            <h2 class="text-2xl font-semibold text-gray-700">Check Availability</h2>
+            <p class="text-sm text-gray-500">Select a time range to see which workspaces are free.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Start Time Block -->
+                <div class="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                    <h3 class="font-semibold text-indigo-700 mb-2 flex items-center text-lg">Start</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="filterStartDate" class="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="filterStartDate" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label for="filterStartTime" class="block text-xs font-medium text-gray-700 mb-1">Time</label>
+                            <input type="time" id="filterStartTime" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- End Time Block -->
+                <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                    <h3 class="font-semibold text-red-700 mb-2 flex items-center text-lg">End</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="filterEndDate" class="block text-xs font-medium text-gray-700 mb-1">Date</label>
+                            <input type="date" id="filterEndDate" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" required>
+                        </div>
+                        <div>
+                            <label for="filterEndTime" class="block text-xs font-medium text-gray-700 mb-1">Time</label>
+                            <input type="time" id="filterEndTime" class="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Button and Status -->
+            <button id="filterBtn" onclick="renderWorkspaces()" 
+                class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                Show Available Workspaces
+            </button>
+            <div id="filterMessage" class="text-sm text-center text-gray-600 pt-2">Please select a time range to load the floor plan.</div>
+        </div>
+
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Floor Plan</h2>
+        
+        <!-- Workspaces Grid - RENDERED BY JAVASCRIPT -->
+        <div id="workspaceGrid" class="floor-plan grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-6 bg-white rounded-xl shadow-lg min-h-[250px] items-center justify-center text-gray-400">
+            Select a time range above to load the floor plan.
+        </div>
+    </div>
+
+    <!-- Booking Modal (Kept separate for the actual booking action) -->
+    <div id="bookingModal" class="modal fixed inset-0 z-50 flex hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg p-6 sm:p-8 rounded-xl shadow-2xl relative" id="modalContent">
+            <button onclick="closeBookingModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                Book <span id="modalWorkspaceName" class="text-indigo-600"></span>
+            </h2>
+            <p class="text-sm text-gray-500 mb-6">Confirm the reservation for the selected time slot.</p>
+
+            <form id="bookingForm" onsubmit="return false;" class="space-y-6">
+                <input type="hidden" id="modalWorkspaceId" value="">
+                
+                <div id="modalSummary" class="p-4 bg-gray-100 rounded-lg border border-gray-300 text-sm font-medium">
+                    <!-- Summary content populated by JS -->
+                </div>
+                
+                <div id="modalResultMessage" class="p-3 rounded-lg text-center font-medium min-h-[3rem] flex items-center justify-center bg-gray-100 text-gray-600 text-sm">
+                    Ready to book!
+                </div>
+
+                <button id="confirmBookingBtn" type="button" onclick="confirmBooking()"
+                    class="w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all duration-200">
+                    Confirm Booking
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Embedded JavaScript -->
+    <script>
+        // --- DATA SIMULATION (REPLACE WITH FIRESTORE/API IN PRODUCTION) ---
+
+        const WORKSPACES = [
+            { id: 1, name: 'Desk A1 (Window)' },
+            { id: 2, name: 'Desk A2 (Window)' },
+            { id: 3, name: 'Desk B1 (Middle)' },
+            { id: 4, name: 'Desk B2 (Middle)' },
+            { id: 5, name: 'Conf. Room C (4 seats)' },
+            { id: 6, name: 'Phone Booth 1' },
+            { id: 7, name: 'Desk D1 (Quiet)' },
+            { id: 8, name: 'Hot Desk X' }
+        ];
+
+        // Existing bookings simulated as Date objects for comparison
+        let BOOKINGS = [
+            // Desk 1 is booked today from 10:00 to 12:00
+            { id: 101, workspaceId: 1, start: new Date('2025-11-11T10:00:00'), end: new Date('2025-11-11T12:00:00') },
+            // Conference Room C is booked all afternoon
+            { id: 102, workspaceId: 5, start: new Date('2025-11-11T14:00:00'), end: new Date('2025-11-11T17:00:00') },
+            // Desk D1 is booked tomorrow morning
+            { id: 103, workspaceId: 7, start: new Date('2025-11-12T09:30:00'), end: new Date('2025-11-12T10:30:00') },
+        ];
+
+
+        // --- DOM REFERENCES ---
+
+        const filterStartDate = document.getElementById('filterStartDate');
+        const filterStartTime = document.getElementById('filterStartTime');
+        const filterEndDate = document.getElementById('filterEndDate');
+        const filterEndTime = document.getElementById('filterEndTime');
+        const filterBtn = document.getElementById('filterBtn');
+        const filterMessage = document.getElementById('filterMessage');
+
+        const workspaceGrid = document.getElementById('workspaceGrid');
+        const bookingModal = document.getElementById('bookingModal');
+        const modalWorkspaceId = document.getElementById('modalWorkspaceId');
+        const modalWorkspaceName = document.getElementById('modalWorkspaceName');
+        const modalSummary = document.getElementById('modalSummary');
+
+        let globalStartTime = null;
+        let globalEndTime = null;
+
+        // --- INITIALIZATION ---
+
+        window.onload = function() {
+            // Set default dates to the current day for convenience
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const nextHour = new Date(now.getTime() + 60 * 60 * 1000);
+            const nextHourTime = nextHour.toTimeString().split(' ')[0].substring(0, 5);
+            const currentHourTime = now.toTimeString().split(' ')[0].substring(0, 5);
+
+            filterStartDate.value = today;
+            filterEndDate.value = today;
+            filterStartTime.value = currentHourTime;
+            filterEndTime.value = nextHourTime;
+
+            // Attach event listeners to all filter inputs
+            [filterStartDate, filterStartTime, filterEndDate, filterEndTime].forEach(input => {
+                input.addEventListener('change', validateFilterTimes);
+                input.addEventListener('input', validateFilterTimes);
+            });
+
+            validateFilterTimes(); // Run initial validation
+        };
+
+
+        // --- VALIDATION & FILTER LOGIC ---
+
+        function validateFilterTimes() {
+            const startDate = filterStartDate.value;
+            const startTime = filterStartTime.value;
+            const endDate = filterEndDate.value;
+            const endTime = filterEndTime.value;
+
+            if (!startDate || !startTime || !endDate || !endTime) {
+                filterMessage.textContent = 'Please select a complete start and end time range.';
+                filterBtn.disabled = true;
+                return;
+            }
+
+            const startDateTime = new Date(`${startDate}T${startTime}:00`);
+            const endDateTime = new Date(`${endDate}T${endTime}:00`);
+
+            if (endDateTime <= startDateTime) {
+                filterMessage.textContent = '❌ Error: End time must be after the start time.';
+                filterBtn.disabled = true;
+                return;
+            }
+            
+            // Validation passed! Store globally and enable button
+            globalStartTime = startDateTime;
+            globalEndTime = endDateTime;
+            filterMessage.textContent = `Time range set: ${globalStartTime.toLocaleString()} to ${globalEndTime.toLocaleString()}. Click the button to check the floor plan.`;
+            filterBtn.disabled = false;
+        }
+
+
+        /**
+         * Checks if a workspace is available during the global time range.
+         * Booking collision occurs if:
+         * (Start time < existing End) AND (End time > existing Start)
+         */
+        function isAvailable(workspaceId) {
+            const bookingsForWorkspace = BOOKINGS.filter(b => b.workspaceId === workspaceId);
+
+            for (const booking of bookingsForWorkspace) {
+                const bookingStart = booking.start;
+                const bookingEnd = booking.end;
+
+                const collision = (globalStartTime < bookingEnd) && (globalEndTime > bookingStart);
+
+                if (collision) {
+                    return false; // Found a conflict
+                }
+            }
+            return true; // No conflicts found
+        }
+
+
+        /**
+         * Renders the workspace grid based on the currently set global time filter.
+         */
+        function renderWorkspaces() {
+            if (!globalStartTime || !globalEndTime) return;
+
+            let html = '';
+            let availableCount = 0;
+
+            WORKSPACES.forEach(ws => {
+                const available = isAvailable(ws.id);
+                const statusClass = available ? 'available' : 'booked';
+                
+                if (available) {
+                    availableCount++;
+                }
+
+                html += `
+                    <div class="workspace-box ${statusClass}" 
+                         data-id="${ws.id}" 
+                         data-name="${ws.name}" 
+                         onclick="${available ? 'showBookingModal(this)' : 'void(0)'}">
+                        ${ws.name}
+                        <span class="absolute bottom-2 text-xs font-semibold ${available ? 'text-green-700' : 'text-red-700'}">
+                            ${available ? 'AVAILABLE' : 'BOOKED'}
+                        </span>
+                    </div>
+                `;
+            });
+
+            workspaceGrid.innerHTML = html;
+            workspaceGrid.classList.remove('items-center', 'justify-center', 'text-gray-400'); // Remove initial placeholder styling
+
+            // Update filter status message
+            filterMessage.textContent = `Found ${availableCount} available workspaces out of ${WORKSPACES.length} between ${globalStartTime.toLocaleTimeString()} and ${globalEndTime.toLocaleTimeString()}.`;
+        }
+
+
+        // --- MODAL FUNCTIONS ---
+
+        /**
+         * Opens the booking modal and populates details from the selected workspace.
+         * @param {HTMLElement} element The clicked workspace-box element.
+         */
+        function showBookingModal(element) {
+            const workspaceId = parseInt(element.getAttribute('data-id'));
+            const workspaceName = element.getAttribute('data-name');
+            
+            modalWorkspaceId.value = workspaceId;
+            modalWorkspaceName.textContent = workspaceName;
+
+            modalSummary.innerHTML = `
+                <p><strong>Workspace:</strong> ${workspaceName}</p>
+                <p><strong>Start:</strong> ${globalStartTime.toLocaleString()}</p>
+                <p><strong>End:</strong> ${globalEndTime.toLocaleString()}</p>
+            `;
+
+            bookingModal.classList.remove('hidden');
+        }
+
+        /**
+         * Closes the booking modal.
+         */
+        function closeBookingModal() {
+            bookingModal.classList.add('hidden');
+        }
+
+        /**
+         * Closes the modal if the click is outside the modal content.
+         */
+        function handleOutsideClick(event) {
+            if (event.target.id === 'bookingModal') {
+                closeBookingModal();
+            }
+        }
+
+        /**
+         * Simulates confirming the booking and updating the data.
+         */
+        function confirmBooking() {
+            const workspaceId = parseInt(modalWorkspaceId.value);
+            const workspaceName = modalWorkspaceName.textContent;
+            
+            // 1. Create new booking record
+            const newBooking = {
+                id: Date.now(), // Simple unique ID
+                workspaceId: workspaceId,
+                start: globalStartTime,
+                end: globalEndTime
+            };
+
+            // 2. Add to simulated data
+            BOOKINGS.push(newBooking);
+
+            // 3. Close modal and show success (using a custom message box instead of alert)
+            closeBookingModal();
+            
+            // Use a temporary notification div for non-blocking success message
+            const tempMsg = document.createElement('div');
+            tempMsg.className = 'fixed top-4 right-4 bg-indigo-600 text-white px-6 py-3 rounded-lg shadow-xl font-bold transition-opacity duration-300';
+            tempMsg.textContent = `🎉 Success! Booked ${workspaceName} from ${globalStartTime.toLocaleTimeString()} to ${globalEndTime.toLocaleTimeString()}.`;
+            document.body.appendChild(tempMsg);
+            
+            setTimeout(() => {
+                tempMsg.style.opacity = '0';
+                setTimeout(() => tempMsg.remove(), 300);
+            }, 3000);
+
+            // 4. Re-render the grid to show the new 'booked' status for that workspace
+            renderWorkspaces();
+        }
+    </script>
+</body>
+</html>
