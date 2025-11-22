@@ -1,54 +1,42 @@
 from datetime import datetime
 from app.crud import get_booking
 
-def convert_to_date(date_str):
-    
-    if isinstance(date_str, datetime): 
-        return date_str.date()
-    elif hasattr(date_str, "year"):  
-        return date_str
-    return datetime.strptime(date_str, "%Y-%m-%d").date()
+
+def parse_iso_naive(ts: str) -> datetime:
+    """
+    Convert ISO timestamp with Zulu offset (UTC) to naive datetime.
+    Example: "2025-11-22T20:34:12.799Z"
+    """
+    dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    return dt.replace(tzinfo=None)     # make naive UTC
 
 
-def convert_to_time(time_str):
-    
-    if hasattr(time_str, "hour"): 
-        return time_str
-    try:
-        # First try 'HH:MM:SS'
-        return datetime.strptime(time_str, "%H:%M:%S").time()
-    except ValueError:
-        # Fall back to 'HH:MM'
-        return datetime.strptime(time_str, "%H:%M").time()
+def validate_booking(bookreq: dict) -> bool:
+    """
+    Validate that a new booking does not overlap with existing bookings.
+    Returns True if valid, False if overlap detected.
+    """
 
+    # Parse new booking times
+    new_start = parse_iso_naive(bookreq["start_ts"])
+    new_end = parse_iso_naive(bookreq["end_ts"])
 
+    if new_end <= new_start:
+        print("Invalid: end time must be after start time.")
+        return False
 
-def validate_booking(bookreq):
-    print(bookreq)
-    print(bookreq["workspace_id"])
-    booking_list = get_booking(bookreq["workspace_id"])
+    bookings = get_booking(bookreq["ids"])
 
-   
-    new_start = datetime.combine(
-        convert_to_date(bookreq["startdate"]),
-        convert_to_time(bookreq["starttime"])
-    )
-    new_end = datetime.combine(
-        convert_to_date(bookreq["enddate"]),
-        convert_to_time(bookreq["endtime"])
-    )
+    for b in bookings:
+        # DB timestamps assumed to be naive UTC
+        existing_start = b.start_ts
+        existing_end = b.end_ts
 
-    print("New booking:", new_start, new_end)
+        # --- Correct overlap rule ---
+        # Overlap exists if:
+        # new_start < existing_end AND new_end > existing_start
+        if new_start < existing_end and new_end > existing_start:
+            print(f"Overlap detected with booking ID {b.b_id}")
+            return False
 
-    for b in booking_list:
-        existing_start = datetime.combine(convert_to_date(b.startdate), convert_to_time(b.starttime))
-        existing_end = datetime.combine(convert_to_date(b.enddate), convert_to_time(b.endtime))
-
-        print("Existing:", existing_start, existing_end)
-
- 
-        if not (new_end <= existing_start or new_start >= existing_end):
-            print("Log overlap")
-            return False 
-
-    return True
+    return True   # No overlaps found
