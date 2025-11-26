@@ -1,11 +1,13 @@
 // --- 3. Modal Component ---
 import React, { useState, useEffect } from "react";
 import Datepick from "./date";
+import Textbox from "./textbox";
+
 const BookingModal = ({ isOpen, onClose, selectedItems, initialStart, initialEnd, onConfirmBooking }) => {
   const [modalStart, setModalStart] = useState(initialStart);
   const [modalEnd, setModalEnd] = useState(initialEnd);
+  const [formdata,setformData]=useState({'Name':"",'Phone':"",'Email':""});
 
-  // Update local state if props change while open
   useEffect(() => {
     if(isOpen) {
         setModalStart(initialStart);
@@ -40,8 +42,11 @@ const BookingModal = ({ isOpen, onClose, selectedItems, initialStart, initialEnd
         <div className="modal-inputs">
             <Datepick label="Start Date/Time" value={modalStart} setValue={setModalStart} />
             <Datepick label="End Date/Time" value={modalEnd} setValue={setModalEnd} />
+            
         </div>
-
+            <Textbox label="Name"  value={formdata.Name} setformData={setformData} formdata={formdata}/>
+            <Textbox label="Phone" value={formdata.Phone} setformData={setformData} formdata={formdata}/>
+            <Textbox label="Email"  value={formdata.Email} setformData={setformData} formdata={formdata}/>
         <div className="modal-actions">
           <button className="btn btn-secondary" onClick={onClose}>
             Cancel

@@ -2,7 +2,7 @@ from flask import  render_template, jsonify,Blueprint,request
 from app.crud import fetch_workspaces, book_workspace,availablespaces
 from app.models import Booking
 from app import db
-from app.util import validate_booking
+from app.util import validate_booking,parse_iso_aware
 from datetime import datetime
 
 bp = Blueprint('routes', __name__)
@@ -55,8 +55,8 @@ def book_workspace():
                 print("!saved")
                 booking = Booking(
                     workspace_id=id,
-                    start_ts=data["start_ts"],
-                    end_ts=data["end_ts"],
+                    start_ts=parse_iso_aware(data["start_ts"]),
+                    end_ts=parse_iso_aware(data["end_ts"]),
                     
                 )
                 db.session.add(booking)

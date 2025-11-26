@@ -15,7 +15,6 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-
   const toggleSelection = (id) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]

@@ -1,6 +1,11 @@
-from datetime import datetime
+from datetime import datetime,timezone
 from app.crud import get_booking
 
+def parse_iso_aware(ts: str) -> datetime:
+    """
+    Converts ISO string with Z to a timezone-aware UTC datetime.
+    """
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
 
 def parse_iso_naive(ts: str) -> datetime:
     """
@@ -8,7 +13,7 @@ def parse_iso_naive(ts: str) -> datetime:
     Example: "2025-11-22T20:34:12.799Z"
     """
     dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    return dt.replace(tzinfo=None)     # make naive UTC
+    return dt     # make naive UTC
 
 
 def validate_booking(bookreq: dict) -> bool:
@@ -18,20 +23,21 @@ def validate_booking(bookreq: dict) -> bool:
     """
 
     # Parse new booking times
-    new_start = parse_iso_naive(bookreq["start_ts"])
-    new_end = parse_iso_naive(bookreq["end_ts"])
-
+    new_start = parse_iso_aware(bookreq["start_ts"])
+    new_end = parse_iso_aware(bookreq["end_ts"])
+    print(new_start,new_end)
     if new_end <= new_start:
         print("Invalid: end time must be after start time.")
         return False
 
     bookings = get_booking(bookreq["ids"])
-
+    print(bookings)
     for b in bookings:
         # DB timestamps assumed to be naive UTC
-        existing_start = b.start_ts
-        existing_end = b.end_ts
-
+        print("b",b.start_ts)
+        existing_start = b.start_ts.replace(tzinfo=timezone.utc)
+        existing_end = b.end_ts.replace(tzinfo=timezone.utc)
+        print(existing_end,existing_start)
         # --- Correct overlap rule ---
         # Overlap exists if:
         # new_start < existing_end AND new_end > existing_start
